@@ -1,0 +1,175 @@
+# load_bloomberg.py
+import os
+import pandas as pd
+from sqlalchemy import create_engine, text
+
+DB_PATH = "/Users/isaiahnick/Market Regime/factor_lens.db"
+BLOOMBERG_DATA_DIR = "/Users/isaiahnick/Market Regime/data"
+
+def get_bloomberg_instruments():
+    """Get Bloomberg instruments from database"""
+    engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
+    query = """
+    SELECT instrument_id, proxy, name
+    FROM instruments
+    WHERE data_type = 'BBG' OR source_hint = 'bloomberg'
+    ORDER BY instrument_id
+    """
+    return pd.read_sql(query, engine)
+
+def save_bloomberg_series(instrument_id, series, currency="USD"):
+    """Save Bloomberg time series to database"""
+    if series is None or series.empty:
+        return 0
+    
+    engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
+    
+    # Prepare data
+    df = series.dropna().reset_index()
+    
+    # Standardize column names
+    if len(df.columns) == 2:
+        df.columns = ["date", "value"]
+    else:
+        # Handle multiple columns - use the price column
+        date_col = df.columns[0]
+        price_col = [col for col in df.columns if 'price' in col.lower() or 'last' in col.lower() or 'px' in col.lower()]
+        if price_col:
+            df = df[[date_col, price_col[0]]]
+            df.columns = ["date", "value"]
+        else:
+            df = df.iloc[:, [0, 1]]  # Take first two columns
+            df.columns = ["date", "value"]
+    
+    df["instrument_id"] = instrument_id
+    df["currency"] = currency
+    
+    # Ensure date is datetime
+    df["date"] = pd.to_datetime(df["date"])
+    
+    # Save via temp table
+    df.to_sql("_bloomberg_temp", engine, if_exists="replace", index=False)
+    
+    with engine.begin() as conn:
+        conn.execute(text("""
+            INSERT OR REPLACE INTO prices (instrument_id, date, value, currency)
+            SELECT instrument_id, date, value, currency FROM _bloomberg_temp
+        """))
+        conn.execute(text("DROP TABLE _bloomberg_temp"))
+    
+    return len(df)
+
+def load_csv_file(file_path):
+    """Load Bloomberg CSV file with flexible parsing"""
+    try:
+        # Try standard CSV first
+        df = pd.read_csv(file_path, parse_dates=[0], index_col=0)
+        return df.iloc[:, 0]  # Return first data column as series
+    except:
+        try:
+            # Try with different encoding
+            df = pd.read_csv(file_path, encoding='latin-1', parse_dates=[0], index_col=0)
+            return df.iloc[:, 0]
+        except:
+            try:
+                # Try without parsing dates initially
+                df = pd.read_csv(file_path)
+                df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0])
+                df = df.set_index(df.columns[0])
+                return df.iloc[:, 0]
+            except Exception as e:
+                print(f"Failed to parse {file_path}: {e}")
+                return None
+
+def find_csv_files():
+    """Find all Bloomberg CSV files in the data directory"""
+    if not os.path.exists(BLOOMBERG_DATA_DIR):
+        print(f"Bloomberg data directory not found: {BLOOMBERG_DATA_DIR}")
+        return {}
+    
+    csv_files = {}
+    for file in os.listdir(BLOOMBERG_DATA_DIR):
+        if file.endswith('.csv'):
+            # Extract Bloomberg ticker from filename
+            ticker = file.replace('.csv', '').replace('_', ' ')
+            csv_files[ticker] = os.path.join(BLOOMBERG_DATA_DIR, file)
+    
+    return csv_files
+
+def load_bloomberg_data():
+    """Load all Bloomberg data from CSV files"""
+    instruments = get_bloomberg_instruments()
+    
+    if instruments.empty:
+        print("No Bloomberg instruments found in database")
+        return
+    
+    csv_files = find_csv_files()
+    if not csv_files:
+        print("No Bloomberg CSV files found")
+        return
+    
+    print(f"Found {len(csv_files)} Bloomberg CSV files")
+    print(f"Need to load {len(instruments)} Bloomberg instruments")
+    
+    total_loaded = 0
+    loaded_count = 0
+    
+    for _, row in instruments.iterrows():
+        instrument_id = int(row["instrument_id"])
+        proxy = row["proxy"]
+        name = row["name"]
+        
+        # Try to find matching CSV file
+        csv_file = None
+        
+        # Direct match
+        if proxy in csv_files:
+            csv_file = csv_files[proxy]
+        else:
+            # Try variations
+            variations = [
+                proxy.replace(' ', '_'),
+                proxy.replace('_', ' '),
+                proxy.replace(' Index', ''),
+                proxy.replace(' Curncy', ''),
+                proxy.replace(' Comdty', ''),
+                proxy.replace(' Govt', ''),
+            ]
+            
+            for var in variations:
+                if var in csv_files:
+                    csv_file = csv_files[var]
+                    break
+        
+        if csv_file:
+            try:
+                series = load_csv_file(csv_file)
+                if series is not None:
+                    count = save_bloomberg_series(instrument_id, series)
+                    print(f"Loaded {proxy}: {count} records")
+                    total_loaded += count
+                    loaded_count += 1
+                else:
+                    print(f"Failed to parse data for {proxy}")
+            except Exception as e:
+                print(f"Error loading {proxy}: {e}")
+        else:
+            print(f"No CSV file found for {proxy}")
+    
+    print(f"Successfully loaded {loaded_count} instruments")
+    print(f"Total records loaded: {total_loaded:,}")
+
+def list_available_files():
+    """List all available Bloomberg CSV files"""
+    csv_files = find_csv_files()
+    
+    print("Available Bloomberg CSV files:")
+    print("-" * 50)
+    for ticker, path in csv_files.items():
+        print(f"  {ticker}")
+    
+    return csv_files
+
+if __name__ == "__main__":
+    load_bloomberg_data()

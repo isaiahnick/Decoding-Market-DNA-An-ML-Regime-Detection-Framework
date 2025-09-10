@@ -1,0 +1,25 @@
+# Database files
+*.db
+*.sqlite
+
+# Data files
+data/
+bloomberg_data/
+
+# Environment variables
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+

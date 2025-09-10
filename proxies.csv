@@ -1,0 +1,36 @@
+category,proxy,name,source_hint,data_type
+EQUITY,^GSPC,S&P 500 Index,yfinance,YF
+EQUITY,VTI,Vanguard Total Stock Market ETF,yfinance,YF
+EQUITY,VEA,Vanguard FTSE Developed Markets ETF,yfinance,YF
+EQUITY,VWO,Vanguard FTSE Emerging Markets ETF,yfinance,YF
+EQUITY,ACWI,iShares MSCI ACWI ETF,yfinance,YF
+SMALL CAP,^RUT,Russell 2000 Index,yfinance,YF
+SMALL CAP,FF_SMB,French Size Factor (SMB),french,FRENCH
+EQUITY VALUATION,CAPE,Shiller CAPE Ratio,shiller,SHILLER
+EQUITY VALUATION,SPX_DY,S&P 500 Dividend Yield,shiller,SHILLER
+INTEREST RATES,DFF,Fed Funds Rate,FRED,FRED
+INTEREST RATES,TB3MS,3-Month Treasury Bill,FRED,FRED
+INTEREST RATES,DGS10,10-Year Treasury Yield,FRED,FRED
+INTEREST RATES,T10Y2Y,10Y-2Y Treasury Spread,FRED,FRED
+INTEREST RATES,T10YIE,10Y Breakeven Inflation,FRED,FRED
+INTEREST RATES,BND,Vanguard Total Bond Market ETF,yfinance,YF
+CREDIT,AAA,Moody's AAA Corporate Yield,FRED,FRED
+CREDIT,BAA,Moody's BAA Corporate Yield,FRED,FRED
+CREDIT,LQD,iShares iBoxx Investment Grade Corporate Bond ETF,yfinance,YF
+CREDIT,HYG,iShares iBoxx High Yield Corporate Bond ETF,yfinance,YF
+COMMODITIES,DCOILWTICO,WTI Crude Oil,FRED,FRED
+COMMODITIES,GC=F,Gold Futures,yfinance,YF
+COMMODITIES,PPIACO,Producer Price Index All Commodities,FRED,FRED
+FOREIGN CURRENCY,DEXCAUS,USD/CAD Exchange Rate,FRED,FRED
+FOREIGN CURRENCY,DEXJPUS,USD/JPY Exchange Rate,FRED,FRED
+FOREIGN CURRENCY,DEXUSUK,USD/GBP Exchange Rate,FRED,FRED
+FOREIGN CURRENCY,DTWEXM,Trade-Weighted Dollar Index,FRED,FRED
+LOCAL INFLATION,CPIAUCSL,CPI (All Urban Consumers),FRED,FRED
+LOCAL INFLATION,CPILFESL,Core CPI,FRED,FRED
+LOCAL INFLATION,T10YIE,10Y Breakeven Inflation,FRED,FRED
+LOCAL INFLATION,TIPS,iShares TIPS Bond ETF,yfinance,YF
+MOMENTUM,FF_UMD,French Momentum Factor (UMD),french,FRENCH
+VALUE,FF_HML,French Value Factor (HML),french,FRENCH
+QUALITY,FF_RMW,French Profitability Factor (RMW),french,FRENCH
+LOW RISK,FF_CMA,French Investment Factor (CMA),french,FRENCH
+EQUITY VOLATILITY,^VIX,CBOE Volatility Index,yfinance,YF
